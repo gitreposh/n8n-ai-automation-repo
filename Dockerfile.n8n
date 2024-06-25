@@ -1,0 +1,16 @@
+FROM n8nio/n8n
+
+# Copie le fichier workflow.json dans le conteneur
+COPY ./workflows/workflow.json /home/node/.n8n/workflow.json
+
+# Utilise l'utilisateur root temporairement pour configurer le répertoire et les permissions
+USER root
+
+# Créer le répertoire et définir les permissions correctes
+RUN mkdir -p /home/node/.n8n && chown -R node:node /home/node/.n8n
+
+# Revenir à l'utilisateur node pour exécuter les commandes suivantes
+USER node
+
+# Importation du workflow pendant le démarrage de n8n
+ENTRYPOINT ["/bin/sh", "-c", "n8n start & while ! curl -s http://localhost:5678/healthz; do echo 'Waiting for n8n to start...'; sleep 2; done; n8n import:workflow --input=/home/node/.n8n/workflow.json; wait"]

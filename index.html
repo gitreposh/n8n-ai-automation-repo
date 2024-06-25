@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page HTML à partir de JSON</title>
+</head>
+<body>
+    <h1 id="header">Blog Posts</h1>
+    <div id="content"></div>
+
+    <script>
+        // Fonction pour charger le fichier JSON depuis l'URL spécifiée
+        async function loadJSON() {
+            const response = await fetch('http://localhost:5678/webhook-test/blog');
+            const data = await response.json();
+            return data;
+        }
+
+        // Fonction pour afficher les données JSON dans la page HTML
+        function displayData(data) {
+            const contentElement = document.getElementById('content');
+            data.data.forEach(item => {
+                const article = item.attributes;
+                const articleElement = document.createElement('div');
+                articleElement.className = 'article';
+
+                const titleElement = document.createElement('h2');
+                titleElement.textContent = article.Title;
+                articleElement.appendChild(titleElement);
+                
+                const authorElement = document.createElement('p');
+                authorElement.className = 'author';
+                authorElement.textContent = `By ${article.Author.data.attributes.Name}`;
+                articleElement.appendChild(authorElement);
+
+                const contentParaElement = document.createElement('p');
+                contentParaElement.className = 'content';
+                contentParaElement.textContent = article.Content;
+                articleElement.appendChild(contentParaElement);
+
+                contentElement.appendChild(articleElement);
+            });
+        }
+
+        // Charger et afficher les données JSON au chargement de la page
+        loadJSON().then(data => {
+            displayData(data);
+        }).catch(error => {
+            console.error('Erreur lors du chargement du fichier JSON:', error);
+        });
+    </script>
+</body>
+</html>

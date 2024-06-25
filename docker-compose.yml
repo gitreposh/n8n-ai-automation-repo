@@ -1,0 +1,74 @@
+version: '3'
+
+services:
+  strapi:
+    build:
+      context: .
+      dockerfile: Dockerfile.strapi
+    container_name: strapi
+    ports:
+      - '1337:1337'
+    environment:
+      DATABASE_CLIENT: 'postgres'
+      DATABASE_HOST: 'postgres'
+      DATABASE_PORT: '5432'
+      DATABASE_NAME: 'strapi'
+      DATABASE_USERNAME: 'strapi'
+      DATABASE_PASSWORD: 'strapi'
+      JWT_SECRET: 'tLPo4O8SqRVr6M7r/auzGw=='  # Remplacer par votre valeur réelle
+      ADMIN_JWT_SECRET: 'TubxEn/7ECCE7GvOUaOgGA=='  # Remplacer par votre valeur réelle
+      APP_KEYS: 'RlH0F9EfBloGgJvdmbmDKQ==,wRZEnnkkLRYu26tfLwojVg==,VkVgXsPJ6YlYHHpt3x8d6g==,kuk4r0fAimkCb6+MZmEf9A=='  # Remplacer par vos valeurs réelles
+      NODE_ENV: 'development'
+    volumes:
+      - ./config:/opt/app/config
+      - ./src:/opt/app/src
+      - ./package.json:/opt/package.json
+      - ./yarn.lock:/opt/yarn.lock
+      - ./.env:/opt/app/.env
+      - ./public/uploads:/opt/app/public/uploads
+    networks:
+      - strapi
+
+  n8n:
+    image: n8nio/n8n
+    container_name: n8n
+    ports:
+      - '5678:5678'
+    depends_on:
+      - strapi
+    environment:
+      N8N_BASIC_AUTH_ACTIVE: 'false'
+      N8N_USER_MANAGEMENT_DISABLED: 'true'
+      N8N_IMPORT_FILE: /workflows/workflow.json
+      STRAPI_API_URL: http://strapi:1337
+    volumes:
+      - ./workflows:/workflows
+    entrypoint:
+      - "sh"
+      - "-c"
+      - "n8n import:workflow --input=/workflows/workflow.json && n8n start"
+    networks:
+      - strapi
+
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    environment:
+      POSTGRES_DB: 'strapi'
+      POSTGRES_USER: 'strapi'
+      POSTGRES_PASSWORD: 'strapi'
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - strapi
+
+volumes:
+  postgres_data:
+
+networks:
+  strapi:
+    name: Strapi
+    driver: bridge
